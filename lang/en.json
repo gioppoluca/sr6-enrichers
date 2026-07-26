@@ -1,0 +1,7 @@
+{
+  "SR6ENRICHERS.Name": "SR6 Enrichers",
+  "SR6ENRICHERS.Actor.NotFound": "Actor not found: {reference}",
+  "SR6ENRICHERS.Actor.Ambiguous": "Multiple Actors named \"{reference}\" were found. Use the Actor UUID.",
+  "SR6ENRICHERS.Actor.OpenImage": "Open image",
+  "SR6ENRICHERS.Actor.ShareImage": "Show to players"
+}

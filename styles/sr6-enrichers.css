@@ -1,0 +1,116 @@
+.sr6-enricher-roll {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #999;
+    border-radius: 3px;
+    padding: 1px 4px;
+    color: inherit;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sr6-enricher-roll:hover {
+    background: rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.sr6-enricher-roll i {
+    margin-right: 3px;
+    color: var(--highlight-color);
+}
+
+.sr6-enricher-condition {
+    border-bottom: 1px dotted #999;
+    cursor: help;
+    font-weight: bold;
+    color: inherit;
+}
+
+.sr6-enricher-condition:hover {
+    border-bottom-color: var(--highlight-color);
+}
+
+.sr6-enricher-dialog {
+    gap: 0;
+}
+sr6-actor-info.sr6-actor-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #999;
+    border-radius: 3px;
+    padding: 1px 4px;
+    color: inherit;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+sr6-actor-info.sr6-actor-info:hover,
+sr6-actor-info.sr6-actor-info:focus-visible {
+    background: rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    outline: none;
+}
+
+sr6-actor-info.sr6-actor-info i {
+    color: var(--highlight-color);
+}
+
+.sr6-actor-info-popover {
+    position: fixed;
+    z-index: 10000;
+    width: min(320px, calc(100vw - 16px));
+    background: var(--background, var(--color-cool-5-90, #202329));
+    border: 1px solid var(--color-border-dark, #666);
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    padding: 10px;
+}
+
+.sr6-actor-info-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sr6-actor-info-card h3 {
+    margin: 0;
+    text-align: center;
+}
+
+.sr6-actor-info-portrait-button {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-border-dark, #666);
+    border-radius: 4px;
+    background: transparent;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.sr6-actor-info-portrait {
+    display: block;
+    width: 100%;
+    max-height: 360px;
+    object-fit: contain;
+    border: 0;
+}
+
+.sr6-actor-info-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.sr6-actor-info-action {
+    flex: 1;
+    margin: 0;
+}
+
+.sr6-enricher-error {
+    color: var(--color-level-error, #ff4d4d);
+    font-weight: bold;
+}
