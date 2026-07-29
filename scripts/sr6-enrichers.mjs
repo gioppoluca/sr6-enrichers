@@ -1,6 +1,7 @@
 import {assertSupportedSystem} from "./api/system-api.mjs";
 import {SR6Enrichers} from "./enrichers/SR6Enrichers.mjs";
 import {registerActorInfoElement} from "./elements/actor-info-element.mjs";
+import {registerItemInfoElement} from "./elements/item-info-element.mjs";
 import {
     onSR6EnricherClick,
     updateMatrixCheckLabels
@@ -12,6 +13,7 @@ Hooks.once("init", () => {
     try {
         assertSupportedSystem();
         registerActorInfoElement();
+        registerItemInfoElement();
         SR6Enrichers.register();
         console.log(`${MODULE_ID} | Enrichers registered.`);
     } catch (error) {

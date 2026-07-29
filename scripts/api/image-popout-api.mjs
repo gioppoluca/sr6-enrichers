@@ -1,18 +1,42 @@
-export function createActorImagePopout(actor) {
+function createImagePopout(document) {
     return new foundry.applications.apps.ImagePopout({
-        src: actor.img,
-        uuid: actor.uuid,
-        window: {title: actor.name}
+        src: document.img,
+        uuid: document.uuid,
+        window: {title: document.name}
     });
 }
 
-export async function openActorImage(actor) {
-    const popout = createActorImagePopout(actor);
+async function openImage(document) {
+    const popout = createImagePopout(document);
     await popout.render(true);
     return popout;
 }
 
-export async function shareActorImage(actor) {
-    const popout = createActorImagePopout(actor);
+async function shareImage(document) {
+    const popout = createImagePopout(document);
     await popout.shareImage();
+}
+
+export function createActorImagePopout(actor) {
+    return createImagePopout(actor);
+}
+
+export function openActorImage(actor) {
+    return openImage(actor);
+}
+
+export function shareActorImage(actor) {
+    return shareImage(actor);
+}
+
+export function createItemImagePopout(item) {
+    return createImagePopout(item);
+}
+
+export function openItemImage(item) {
+    return openImage(item);
+}
+
+export function shareItemImage(item) {
+    return shareImage(item);
 }

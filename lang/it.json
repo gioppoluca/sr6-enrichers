@@ -3,5 +3,10 @@
   "SR6ENRICHERS.Actor.NotFound": "Attore non trovato: {reference}",
   "SR6ENRICHERS.Actor.Ambiguous": "Sono stati trovati più Attori chiamati \"{reference}\". Usa l’UUID dell’Attore.",
   "SR6ENRICHERS.Actor.OpenImage": "Apri immagine",
-  "SR6ENRICHERS.Actor.ShareImage": "Mostra ai giocatori"
+  "SR6ENRICHERS.Actor.ShareImage": "Mostra ai giocatori",
+  "SR6ENRICHERS.Item.NotFound": "Item non trovato: {reference}",
+  "SR6ENRICHERS.Item.Ambiguous": "Sono stati trovati più Item chiamati \"{reference}\". Usa l’UUID dell’Item.",
+  "SR6ENRICHERS.Item.OpenImage": "Apri immagine",
+  "SR6ENRICHERS.Item.ShareImage": "Mostra ai giocatori",
+  "SR6ENRICHERS.Item.NoDescription": "Nessuna descrizione disponibile."
 }

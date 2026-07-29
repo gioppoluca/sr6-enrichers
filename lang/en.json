@@ -3,5 +3,10 @@
   "SR6ENRICHERS.Actor.NotFound": "Actor not found: {reference}",
   "SR6ENRICHERS.Actor.Ambiguous": "Multiple Actors named \"{reference}\" were found. Use the Actor UUID.",
   "SR6ENRICHERS.Actor.OpenImage": "Open image",
-  "SR6ENRICHERS.Actor.ShareImage": "Show to players"
+  "SR6ENRICHERS.Actor.ShareImage": "Show to players",
+  "SR6ENRICHERS.Item.NotFound": "Item not found: {reference}",
+  "SR6ENRICHERS.Item.Ambiguous": "Multiple Items named \"{reference}\" were found. Use the Item UUID.",
+  "SR6ENRICHERS.Item.OpenImage": "Open image",
+  "SR6ENRICHERS.Item.ShareImage": "Show to players",
+  "SR6ENRICHERS.Item.NoDescription": "No description available."
 }
