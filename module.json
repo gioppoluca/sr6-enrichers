@@ -14,8 +14,7 @@
   ],
   "compatibility": {
     "minimum": "13",
-    "verified": "13",
-    "maximum": "14"
+    "verified": "13"
   },
   "relationships": {
     "systems": [
@@ -44,5 +43,14 @@
       "name": "Italiano",
       "path": "lang/it.json"
     }
+  ],
+  "media": [
+    {
+      "type": "icon",
+      "url": "https://raw.githubusercontent.com/gioppoluca/sr6-enrichers/master/img/banner.webp",
+      "loop": false,
+      "flags": {}
+    }
   ]
+
 }
