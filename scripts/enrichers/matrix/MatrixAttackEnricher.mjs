@@ -25,7 +25,7 @@ export class MatrixAttackEnricher extends SR6Enricher {
         anchor.classList.add("sr6-enricher-roll", "sr6-matrix-attack");
         anchor.dataset.sr6EnricherAction = this.action;
         anchor.dataset.matrixAction = attack.actionId;
-        anchor.dataset.targetUuids = attack.targetUuids.join(",");
+        anchor.dataset.targetUuid = attack.targetUuid;
 
         const icon = document.createElement("i");
         icon.classList.add("fas", "fa-bolt");
@@ -36,37 +36,29 @@ export class MatrixAttackEnricher extends SR6Enricher {
 
     static async handle(element, _event) {
         const actionId = element.dataset.matrixAction;
-        const targetUuids = element.dataset.targetUuids
-            ?.split(",")
-            .map(uuid => uuid.trim())
-            .filter(Boolean) ?? [];
+        const targetUuid = element.dataset.targetUuid;
 
-        if (actionId !== "data_spike" || !targetUuids.length) {
+        if (actionId !== "data_spike" || !targetUuid) {
             console.warn(`${LOG_PREFIX} | Invalid MatrixAttack data`, element.dataset);
             return;
         }
 
-        const targetDocuments = [];
+        const tokenDocument = await fromUuid(targetUuid);
 
-        for (const uuid of targetUuids) {
-            const tokenDocument = await fromUuid(uuid);
-
-            if (
-                tokenDocument?.documentName !== "Token" ||
-                tokenDocument.parent?.id !== canvas.scene?.id ||
-                !tokenDocument.object
-            ) {
-                ui.notifications.warn(`Matrix attack target "${uuid}" is not available on the current scene.`);
-                return;
-            }
-
-            targetDocuments.push(tokenDocument);
+        if (
+            tokenDocument?.documentName !== "Token" ||
+            tokenDocument.parent?.id !== canvas.scene?.id ||
+            !tokenDocument.object ||
+            !tokenDocument.actor
+        ) {
+            ui.notifications.warn(`Matrix attack target "${targetUuid}" is not available on the current scene.`);
+            return;
         }
 
         const actors = await this.resolveRollActors();
         if (!actors.length) return;
 
-        game.user.updateTokenTargets(targetDocuments.map(token => token.id));
+        game.user.updateTokenTargets([tokenDocument.id]);
 
         const action = CONFIG.SR6.MATRIX_ACTIONS.data_spike;
         if (!action) {
@@ -76,7 +68,9 @@ export class MatrixAttackEnricher extends SR6Enricher {
 
         for (const actor of actors) {
             const {MatrixActionRoll} = await getRollTypes();
-            const roll = new MatrixActionRoll(actor.system, action);
+            const roll = new MatrixActionRoll(actor, action, {
+                target: tokenDocument.actor
+            });
             await actor.performMatrixAction(roll);
         }
     }
@@ -96,10 +90,10 @@ export class MatrixAttackEnricher extends SR6Enricher {
             .map(uuid => uuid.trim())
             .filter(Boolean);
 
-        if (!targetUuids?.length) return null;
-        if (targetUuids.some(uuid => !TOKEN_UUID_PATTERN.test(uuid))) return null;
+        if (targetUuids?.length !== 1) return null;
+        if (!TOKEN_UUID_PATTERN.test(targetUuids[0])) return null;
 
-        return {actionId, targetUuids};
+        return {actionId, targetUuid: targetUuids[0]};
     }
 
     static #parseParameters(rawParameters) {

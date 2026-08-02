@@ -18,8 +18,24 @@ const ENRICHERS = [
 
 export class SR6Enrichers {
     static register() {
+        let registered = 0;
+
         for (const enricher of ENRICHERS) {
-            enricher.register();
+            if (enricher.register()) registered += 1;
         }
+
+        return registered;
+    }
+
+    static getStatus() {
+        return ENRICHERS.map(enricher => ({
+            name: enricher.name,
+            pattern: `/${enricher.pattern.source}/${enricher.pattern.flags}`,
+            registered: enricher.isRegistered()
+        }));
+    }
+
+    static areRegistered() {
+        return ENRICHERS.every(enricher => enricher.isRegistered());
     }
 }

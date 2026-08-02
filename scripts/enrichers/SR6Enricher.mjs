@@ -1,3 +1,5 @@
+import {activateSR6EnricherListeners} from "./SR6EnricherEvents.mjs";
+
 const LOG_PREFIX = "SR6E | Enricher";
 
 export class SR6Enricher {
@@ -9,19 +11,41 @@ export class SR6Enricher {
             throw new Error(`${this.name} must define a pattern`);
         }
 
+        if (!Array.isArray(CONFIG.TextEditor?.enrichers)) {
+            throw new Error("CONFIG.TextEditor.enrichers is not available");
+        }
+
         const alreadyRegistered = CONFIG.TextEditor.enrichers.some(
-            config => config.pattern?.source === this.pattern.source
-                && config.pattern?.flags === this.pattern.flags
+            config => config.sr6Enricher === this.name
         );
         if (alreadyRegistered) {
-            this.warn(`Pattern already registered for ${this.name}; skipping duplicate.`);
-            return;
+            console.log(`${LOG_PREFIX} | ${this.name} already registered.`);
+            return false;
         }
 
         CONFIG.TextEditor.enrichers.push({
+            id: `sr6-enrichers-${this.name}`,
             pattern: this.pattern,
-            enricher: this.enrich.bind(this)
+            enricher: async (match, options) => {
+                console.log(`${LOG_PREFIX} | ${this.name} matched`, match[0]);
+                return this.enrich(match, options);
+            },
+            onRender: root => {
+                if (this.action) activateSR6EnricherListeners(root, this);
+                void this.onRender(root);
+            },
+            sr6Enricher: this.name
         });
+
+        console.log(
+            `${LOG_PREFIX} | Registered ${this.name}: /${this.pattern.source}/${this.pattern.flags}`
+        );
+        return true;
+    }
+
+    static isRegistered() {
+        return Array.isArray(CONFIG.TextEditor?.enrichers)
+            && CONFIG.TextEditor.enrichers.some(config => config.sr6Enricher === this.name);
     }
 
     static async enrich(_match, _options) {
@@ -31,6 +55,8 @@ export class SR6Enricher {
     static async handle(_element, _event) {
         throw new Error(`${this.name}.handle must be implemented`);
     }
+
+    static async onRender(_root) {}
 
     static createInvalidEnricher(source) {
         const span = document.createElement("span");
@@ -54,10 +80,10 @@ export class SR6Enricher {
                 return [];
             }
 
-            return SR6Enricher.#uniqueActors(actors);
+            return this.uniqueActors(actors);
         }
 
-        if (game.user.isGM) return SR6Enricher.#selectSceneActors();
+        if (game.user.isGM) return this.selectSceneActors();
 
         const character = game.user.character;
         if (character?.isOwner) return [character];
@@ -69,14 +95,14 @@ export class SR6Enricher {
         return [];
     }
 
-    static #uniqueActors(actors) {
+    static uniqueActors(actors) {
         return Array.from(
             new Map(actors.map(actor => [actor.uuid, actor])).values()
         );
     }
 
-    static async #selectSceneActors() {
-        const actors = SR6Enricher.#uniqueActors(
+    static async selectSceneActors() {
+        const actors = this.uniqueActors(
             (canvas.tokens?.placeables ?? [])
                 .map(token => token.actor)
                 .filter(Boolean)
@@ -97,7 +123,7 @@ export class SR6Enricher {
         }
 
         const content = document.createElement("div");
-        content.classList.add("standard-form");
+        content.classList.add("standard-form", "sr6-enricher-dialog");
 
         for (const actor of actors) {
             const field = document.createElement("label");
@@ -115,48 +141,28 @@ export class SR6Enricher {
             content.append(field);
         }
 
-        const selectedUuids = foundry.applications?.api?.DialogV2
-            ? await foundry.applications.api.DialogV2.wait({
-                window: {title: "Select Actors"},
-                content,
-                buttons: [
-                    {
-                        action: "roll",
-                        label: game.i18n.localize("Roll"),
-                        icon: "fas fa-dice-d6",
-                        default: true,
-                        callback: (_event, button) => Array.from(
-                            button.form.querySelectorAll('input[name="actor"]:checked')
-                        ).map(input => input.value)
-                    },
-                    {
-                        action: "cancel",
-                        label: game.i18n.localize("Cancel")
-                    }
-                ],
-                close: () => null
-            })
-            : await new Promise(resolve => {
-                new Dialog({
-                    title: "Select Actors",
-                    content: content.outerHTML,
-                    buttons: {
-                        roll: {
-                            label: game.i18n.localize("Roll"),
-                            icon: '<i class="fas fa-dice-d6"></i>',
-                            callback: html => resolve(Array.from(
-                                html[0].querySelectorAll('input[name="actor"]:checked')
-                            ).map(input => input.value))
-                        },
-                        cancel: {
-                            label: game.i18n.localize("Cancel"),
-                            callback: () => resolve(null)
-                        }
-                    },
-                    default: "roll",
-                    close: () => resolve(null)
-                }).render(true);
-            });
+        console.log(`${LOG_PREFIX} | Opening GM Actor selector with ${actors.length} actors.`);
+
+        const selectedUuids = await foundry.applications.api.DialogV2.wait({
+            window: {title: "Select Actors"},
+            content: content.outerHTML,
+            buttons: [
+                {
+                    action: "roll",
+                    label: game.i18n.localize("Roll"),
+                    icon: "fas fa-dice-d6",
+                    default: true,
+                    callback: (_event, button) => Array.from(
+                        button.form.querySelectorAll('input[name="actor"]:checked')
+                    ).map(input => input.value)
+                },
+                {
+                    action: "cancel",
+                    label: game.i18n.localize("Cancel")
+                }
+            ],
+            close: () => null
+        });
 
         if (!Array.isArray(selectedUuids) || !selectedUuids.length) return [];
 
@@ -166,7 +172,4 @@ export class SR6Enricher {
             .filter(Boolean);
     }
 
-    static warn(message, ...data) {
-        console.warn(`${LOG_PREFIX} | ${message}`, ...data);
-    }
 }

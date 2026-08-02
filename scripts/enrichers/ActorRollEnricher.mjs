@@ -182,7 +182,7 @@ export class ActorRollEnricher extends SR6Enricher {
             return;
         }
 
-        const primaryPool = Number(actor.system.attributes?.[attributeId]?.pool);
+        const primaryPool = this.#getAttributePool(actor, attributeId);
         if (!Number.isFinite(primaryPool)) {
             console.warn(`Actor "${actor.name}" does not have attribute "${attributeId}"`);
             return;
@@ -197,7 +197,7 @@ export class ActorRollEnricher extends SR6Enricher {
                 return;
             }
 
-            const secondaryPool = Number(actor.system.attributes?.[secondaryId]?.pool);
+            const secondaryPool = this.#getAttributePool(actor, secondaryId);
             if (!Number.isFinite(secondaryPool)) {
                 console.warn(`Actor "${actor.name}" does not have attribute "${secondaryId}"`);
                 return;
@@ -223,5 +223,14 @@ export class ActorRollEnricher extends SR6Enricher {
             useModifier: true,
             useThreshold: true
         });
+    }
+
+    static #getAttributePool(actor, attributeId) {
+        const key = actor.system instanceof foundry.abstract.DataModel
+            ? CONFIG.SR6.ATTRIBUTE_TO_V2[attributeId]
+            : attributeId;
+
+        if (!key) return NaN;
+        return Number(actor.system.attributes?.[key]?.pool);
     }
 }

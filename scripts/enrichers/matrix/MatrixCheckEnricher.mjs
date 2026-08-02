@@ -63,7 +63,7 @@ export class MatrixCheckEnricher extends SR6Enricher {
             return;
         }
 
-        const host = HostEnricher.resolve(element, hostId);
+        const host = await HostEnricher.resolve(element, hostId);
         if (!host) {
             ui.notifications.warn(`SR6E | Host "${hostId}" was not found on this Journal Page.`);
             return;
@@ -91,12 +91,14 @@ export class MatrixCheckEnricher extends SR6Enricher {
 
         const hostAction = foundry.utils.deepClone(action);
         hostAction.threshold = actionThreshold;
-        hostAction.opposedAttr1 = null;
-        hostAction.opposedAttr2 = null;
+        hostAction.attr1 = null;
+        hostAction.attr2 = null;
+        hostAction.attr1_alt = null;
+        hostAction.attr2_alt = null;
 
         for (const actor of actors) {
             const {MatrixActionRoll} = await getRollTypes();
-            const roll = new MatrixActionRoll(actor.system, hostAction);
+            const roll = new MatrixActionRoll(actor, hostAction);
 
             if (actionId === "probe") {
                 roll.extended = true;
@@ -107,11 +109,19 @@ export class MatrixCheckEnricher extends SR6Enricher {
         }
     }
 
-    static updateLabels(html) {
+    static async onRender(root) {
+        await this.updateLabels(root);
+    }
+
+    static async updateLabels(html) {
         const root = html instanceof HTMLElement ? html : html?.[0];
         if (!(root instanceof HTMLElement)) return;
 
-        for (const element of root.querySelectorAll(".sr6-matrix-check")) {
+        const elements = [];
+        if (root.matches(".sr6-matrix-check")) elements.push(root);
+        elements.push(...root.querySelectorAll(".sr6-matrix-check"));
+
+        for (const element of elements) {
             if (!(element instanceof HTMLElement)) continue;
             if (element.dataset.customLabel === "true") continue;
 
@@ -119,7 +129,7 @@ export class MatrixCheckEnricher extends SR6Enricher {
             const hostId = element.dataset.hostId;
             if (!actionId || !hostId) continue;
 
-            const host = HostEnricher.resolve(element, hostId);
+            const host = await HostEnricher.resolve(element, hostId);
             if (!host) continue;
 
             const label = element.querySelector(".sr6-matrix-check-label");
@@ -138,13 +148,13 @@ export class MatrixCheckEnricher extends SR6Enricher {
         const parameters = this.#parseParameters(rawParameters);
         if (!parameters) return null;
 
-        const hostId = parameters.host?.toLowerCase();
+        const hostId = parameters.host?.trim();
         const threshold = this.#parseThreshold(parameters.threshold);
 
         const actionMode = ACTION_MODES[actionId];
         if (!actionMode) return null;
         if (!CONFIG.SR6.MATRIX_ACTIONS[actionId]) return null;
-        if (!hostId || !/^[a-z0-9-]+$/.test(hostId)) return null;
+        if (!hostId) return null;
         if (threshold === null) return null;
         if (actionMode === "threshold" && threshold === undefined) return null;
         if (Object.keys(parameters).some(key => !["host", "threshold"].includes(key))) return null;
@@ -180,8 +190,8 @@ export class MatrixCheckEnricher extends SR6Enricher {
     }
 
     static #getDefensePool(action, host) {
-        const first = this.#getHostAttribute(host, action.opposedAttr1);
-        const second = this.#getHostAttribute(host, action.opposedAttr2);
+        const first = this.#getHostAttribute(host, action.attr1_alt ?? action.attr1);
+        const second = this.#getHostAttribute(host, action.attr2_alt ?? action.attr2);
 
         if (first !== null && second !== null) return first + second;
         if (first !== null) return first * 2;

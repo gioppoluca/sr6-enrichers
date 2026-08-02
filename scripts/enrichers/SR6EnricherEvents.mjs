@@ -1,38 +1,36 @@
-import {ActorRollEnricher} from "./ActorRollEnricher.mjs";
-import {MatrixCheckEnricher} from "./matrix/MatrixCheckEnricher.mjs";
-import {MatrixAttackEnricher} from "./matrix/MatrixAttackEnricher.mjs";
+const LOG_PREFIX = "SR6E | Enricher";
+const LISTENER = Symbol("sr6EnricherListener");
 
-const ENRICHER_SELECTOR = "[data-sr6-enricher-action]";
-const HANDLERS = new Map([
-    [ActorRollEnricher.action, ActorRollEnricher],
-    [MatrixCheckEnricher.action, MatrixCheckEnricher],
-    [MatrixAttackEnricher.action, MatrixAttackEnricher]
-]);
+export function activateSR6EnricherListeners(root, handler) {
+    if (!(root instanceof Element) || !handler?.action) return;
 
-export async function onSR6EnricherClick(event) {
-    const eventTarget = event.target;
-    if (!(eventTarget instanceof Element)) return;
+    const selector = `[data-sr6-enricher-action="${handler.action}"]`;
+    const elements = [];
 
-    const element = eventTarget.closest(ENRICHER_SELECTOR);
-    if (!(element instanceof HTMLElement)) return;
+    if (root.matches(selector)) elements.push(root);
+    elements.push(...root.querySelectorAll(selector));
 
-    const action = element.dataset.sr6EnricherAction;
-    const handler = HANDLERS.get(action);
+    for (const element of elements) {
+        if (!(element instanceof HTMLElement)) continue;
 
-    if (!handler) {
-        console.warn(`SR6E | Enricher | Unsupported action "${action}"`);
-        return;
+        if (element[LISTENER]) {
+            element.removeEventListener("click", element[LISTENER]);
+        }
+
+        element[LISTENER] = event => onSR6EnricherClick(event, element, handler);
+        element.addEventListener("click", element[LISTENER]);
     }
+}
 
+async function onSR6EnricherClick(event, element, handler) {
     event.preventDefault();
 
     try {
         await handler.handle(element, event);
     } catch (error) {
-        console.error(`SR6E | Enricher | Failed to handle action "${action}"`, error);
+        console.error(
+            `${LOG_PREFIX} | Failed to handle action "${handler.action}"`,
+            error
+        );
     }
-}
-
-export function updateMatrixCheckLabels(html) {
-    MatrixCheckEnricher.updateLabels(html);
 }

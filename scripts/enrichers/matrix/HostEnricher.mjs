@@ -1,3 +1,5 @@
+const LOG_PREFIX = "SR6E | Enricher";
+
 import {SR6Enricher} from "../SR6Enricher.mjs";
 
 export class HostEnricher extends SR6Enricher {
@@ -7,7 +9,7 @@ export class HostEnricher extends SR6Enricher {
         const host = this.#parseDefinition(match[1]);
 
         if (!host) {
-            this.warn(`Invalid Host definition "${match[1]}"`);
+            console.warn(`${LOG_PREFIX} | Invalid Host definition "${match[1]}"`);
             return this.createInvalidEnricher(match[0]);
         }
 
@@ -28,27 +30,111 @@ export class HostEnricher extends SR6Enricher {
         return span;
     }
 
-    static resolve(element, hostId) {
+    static async resolve(element, hostReference) {
+        const actorResolution = await this.#resolveActorHost(hostReference);
+        if (actorResolution.resolved) return actorResolution.host;
+        if (actorResolution.stop) return null;
+
+        return this.#resolveInlineHost(element, hostReference);
+    }
+
+    static async #resolveActorHost(hostReference) {
+        const reference = hostReference.trim();
+        if (!reference) return {resolved: false, stop: false, host: null};
+
+        if (this.#looksLikeUuid(reference)) {
+            let document;
+
+            try {
+                document = await fromUuid(reference);
+            } catch (error) {
+                console.warn(`${LOG_PREFIX} | Failed to resolve Host Actor UUID "${reference}".`, error);
+                return {resolved: false, stop: true, host: null};
+            }
+
+            if (document?.documentName !== "Actor" || document.type !== "host") {
+                console.warn(`${LOG_PREFIX} | UUID "${reference}" does not resolve to a Host Actor.`);
+                return {resolved: false, stop: true, host: null};
+            }
+
+            const host = this.#fromActor(document);
+            console.log(`${LOG_PREFIX} | Resolved Host Actor by UUID: ${reference}`);
+            return {resolved: Boolean(host), stop: true, host};
+        }
+
+        const matches = game.actors.filter(actor => {
+            if (actor.type !== "host") return false;
+            const sourceName = actor._source?.name ?? actor.name;
+            return sourceName === reference || actor.name === reference;
+        });
+
+        if (matches.length > 1) {
+            console.warn(
+                `${LOG_PREFIX} | Multiple Host Actors named "${reference}" were found; use an Actor UUID.`
+            );
+            return {resolved: false, stop: true, host: null};
+        }
+
+        if (matches.length === 1) {
+            const host = this.#fromActor(matches[0]);
+            console.log(`${LOG_PREFIX} | Resolved Host Actor by name: ${reference}`);
+            return {resolved: Boolean(host), stop: true, host};
+        }
+
+        return {resolved: false, stop: false, host: null};
+    }
+
+    static #resolveInlineHost(element, hostReference) {
         const scope = element.closest(
             ".journal-page-content, .journal-entry-content, .editor-content, .window-content"
         );
         if (!scope) return null;
 
+        const normalizedReference = hostReference.trim().toLowerCase();
         const hostElement = Array.from(
             scope.querySelectorAll("[data-sr6-host-id]")
-        ).find(candidate => candidate.dataset.sr6HostId === hostId);
+        ).find(candidate => candidate.dataset.sr6HostId === normalizedReference);
 
         if (!(hostElement instanceof HTMLElement)) return null;
 
         const host = {
-            label: hostElement.dataset.hostLabel || hostId,
+            label: hostElement.dataset.hostLabel || hostReference,
             attack: Number(hostElement.dataset.attack),
             sleaze: Number(hostElement.dataset.sleaze),
             dataProcessing: Number(hostElement.dataset.dataProcessing),
             firewall: Number(hostElement.dataset.firewall)
         };
 
-        return Object.values(host).slice(1).every(Number.isFinite) ? host : null;
+        if (!Object.values(host).slice(1).every(Number.isFinite)) return null;
+
+        console.log(`${LOG_PREFIX} | Resolved inline Host definition: ${normalizedReference}`);
+        return host;
+    }
+
+    static #fromActor(actor) {
+        const attributes = actor.system?.matrix?.attributes;
+        if (!attributes) {
+            console.warn(`${LOG_PREFIX} | Host Actor "${actor.name}" has no Matrix attributes.`);
+            return null;
+        }
+
+        const host = {
+            label: actor._source?.name ?? actor.name.replace(/^\/\//, ""),
+            attack: Number(attributes.attack),
+            sleaze: Number(attributes.sleaze),
+            dataProcessing: Number(attributes.dataProcessing),
+            firewall: Number(attributes.firewall),
+            actor
+        };
+
+        return [host.attack, host.sleaze, host.dataProcessing, host.firewall]
+            .every(Number.isFinite)
+            ? host
+            : null;
+    }
+
+    static #looksLikeUuid(reference) {
+        return /^(?:Actor\.[^.]+|Compendium\..+\.Actor\.[^.]+)$/.test(reference);
     }
 
     static #parseDefinition(source) {
