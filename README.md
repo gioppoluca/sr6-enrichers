@@ -514,8 +514,8 @@ Foundry VTT 13 and 14 with the `shadowrun6-eden` system.
 
 ## Installation
 
-Copy the `sr6-enrichers` folder into Foundry's `Data/modules` directory, restart Foundry, and enable **SR6 Enrichers** in the world.
-
+Copy the `sr6-enrichers` link below in the Foundry's module installation dialog.
+https://github.com/gioppoluca/sr6-enrichers/releases/download/latest/module.json
 
 ## Changelog
 
