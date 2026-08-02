@@ -14,14 +14,14 @@
   ],
   "compatibility": {
     "minimum": "13",
-    "verified": "13"
+    "verified": "14"
   },
   "relationships": {
     "systems": [
       {
         "id": "shadowrun6-eden",
         "compatibility": {
-          "minimum": "3.3.9"
+          "minimum": "4.0.0"
         }
       }
     ]
